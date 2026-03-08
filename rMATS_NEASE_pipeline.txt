@@ -1,0 +1,174 @@
+
+
+#####################################################
+#####################################################
+
+mkdir /path/to/rMATS_script
+download rmats.py from rmats-turbo repository
+https://github.com/Xinglab/rmats-turbo/blob/master/rmats.py
+
+
+#####################################################
+#####################################################
+concat all 4 WT-DOX-1.fasq files to G0-DOXY-1.fastq
+concat all 4 WT-DOX-2.fasq files to G0-DOXY-2.fastq
+concat all 4 WT-DOX-3.fasq files to G0-DOXY-3.fastq
+
+concat all 4 G1-DOX-1.fasq files to G1-DOXY-1.fastq
+concat all 4 G1-DOX-2.fasq files to G1-DOXY-2.fastq
+concat all 4 G1-DOX-3.fasq files to G1-DOXY-3.fastq
+
+concat all 4 G2-DOX-1.fasq files to G2-DOXY-1.fastq
+concat all 4 G2-DOX-2.fasq files to G2-DOXY-2.fastq
+concat all 4 G2-DOX-3.fasq files to G3-DOXY-1.fastq
+
+
+#####################################################
+#####################################################
+## Establish genomeDir_38
+#STAR is buil within the rMATS environment (see rMATS.yml file)
+
+export PATH=/path/to/rMATS/bin:$PATH
+
+genome="/path/to/genomeDir_38"
+fasta="/path/to/fasta"
+annotation="/path/to/annotate_ref"
+
+STAR --runMode genomeGenerate \
+     --genomeDir ${genome} \
+     --genomeFastaFiles ${fasta}/Homo_sapiens.GRCh38.dna.toplevel.fa \
+     --sjdbGTFfile ${annotation}/Homo_sapiens.GRCh38.113.gtf \
+     --sjdbOverhang 75 \
+     --runThreadN 6 \
+     --limitGenomeGenerateRAM 86000000000
+
+   
+
+
+
+#####################################################
+#####################################################
+## Identify alternative splicing events using rMATS-turbo
+
+
+######DOX(+) G1 VS. G0
+######DOX(+) G2 VS. G0
+
+
+s1_DOX_G1_G0.txt:
+
+/path/to/HEK293_APOL1/G0-DOXY-1.fastq,/path/to/HEK293_APOL1/G0-DOXY-2.fastq,/path/to/HEK293_APOL1/G0-DOXY-3.fastq
+
+
+s2_DOX_G1_G0.txt:
+
+/path/to/HEK293_APOL1/G1-DOXY-1.fastq,/path/to/HEK293_APOL1/G1-DOXY-2.fastq,/path/to/HEK293_APOL1/G1-DOXY-3.fastq
+
+
+
+01_rMATS_G1_G0_DOXY.slurm
+
+
+#!/bin/bash
+#SBATCH --job-name="rMATS_G1_G0-DOXY"
+#SBATCH --output="%x.%j.%N.out"
+#SBATCH --partition=shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=96G
+#SBATCH --account=
+#SBATCH --export=ALL
+#SBATCH -t 4:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=
+
+export PATH=/path/to/rMATS/bin:$PATH
+cd /path/to/rMATS_script
+
+ref="/path/to/annotate_ref"
+tmp="/path/to/rMATS_tmp"
+out="/path/to/rMATS_out/G1_G0_DOX_concat_38"
+binary="/path/to/genomeDir_38"
+
+s1_dir="/path/to/HEK293_APOL1"
+s2_dir="/path/to/HEK293_APOL1"
+
+python rmats.py \
+  --s1 ${s1_dir}/s1_DOX_G1_G0.txt \
+  --s2 ${s2_dir}/s2_DOX_G1_G0.txt \
+  --gtf ${ref}/Homo_sapiens.GRCh38.113.gtf \
+  --od ${out} \
+  --tmp ${tmp} \
+  --bi ${binary} \
+  -t single \
+  --readLength 76 \
+  --libType fr-firststrand
+
+
+
+
+02_rMATS_G2_G0_DOXY.slurm
+
+#!/bin/bash
+#SBATCH --job-name="rMATS_G2_G0-DOXY"
+#SBATCH --output="%x.%j.%N.out"
+#SBATCH --partition=shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=96G
+#SBATCH --account=
+#SBATCH --export=ALL
+#SBATCH -t 4:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=
+
+export PATH=/path/to/rMATS/bin:$PATH
+cd /path/to/rMATS_script
+
+ref="/path/to/annotate_ref"
+tmp="/path/to/rMATS_tmp"
+out="/path/to/rMATS_out/G1_G0_DOX_concat_38"
+binary="/path/to/genomeDir_38"
+#cd /path/to/HEK293_APOL1
+s1_dir="/path/to/HEK293_APOL1"
+s2_dir="/path/to/HEK293_APOL1"
+
+cd /path/to/rMATS_script
+
+python rmats.py \
+  --s1 ${s1_dir}/s1_DOX_G2_G0.txt \
+  --s2 ${s2_dir}/s2_DOX_G2_G0.txt \
+  --gtf ${ref}/Homo_sapiens.GRCh38.113.gtf \
+  --od ${out} \
+  --tmp ${tmp} \
+  --bi ${binary} \
+  -t single \
+  --readLength 76 \
+  --libType fr-firststrand
+
+
+#####################################################
+#####################################################
+##Annotate alternative splicing events based on functional domain using NEASE pipeline
+##Establish NEASE environment using NEASE.yml file 
+## See jupyter notebook files
+##G1_G0_DOX_concat_FDR_0.01_pub.ipynb;G2_G0_DOX_concat_FDR_0.01_pub.ipynb
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
